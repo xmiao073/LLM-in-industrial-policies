@@ -1,0 +1,43 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Logs and outputs
+*.log
+*.out
+*.err
+logs/
+outputs/
+*.pkl.gz
+*.csv
+*.xlsx
+*.parquet
+*.zip
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editor configs
+.idea/
+.vscode/
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+
+# HPC temporary files
+slurm-*.out
+
+# Temporary notebooks or reports
+notebooks/temp_*/

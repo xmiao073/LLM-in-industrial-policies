@@ -44,8 +44,8 @@ OUT_DIR    = OUT_DIR_DEFAULT
 WINSOR_P   = WINSOR_P_DEFAULT
 YEAR_START = YEAR_START_DEFAULT
 
-# Keep script-local constant (not from .env unless你想加到config)
-MIN_N_OBS  = 30        # Minimum observations for each industry
+# Keep script-local constants here
+MIN_N_OBS  = 30
 # ========================================
 
 

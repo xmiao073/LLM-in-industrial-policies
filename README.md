@@ -110,3 +110,9 @@ xmiao073	Lead Developer	—
 ChatGPT (Assistant)	Project Advisor	—
 
 🏆 Designed for reproducibility, interpretability, and transparent benchmarking of LLM–policy interactions.
+
+### 🔘 One-click pipeline
+```bash
+bash run_pipeline.sh
+# 动态示例
+FREQ=dynamic DYN_WINDOWS="1 3 6 9 12 24 36" bash run_pipeline.sh

@@ -1,43 +1,86 @@
-# Byte-compiled / cache files
+# ===============================
+# 🧠 LLM-in-Industrial-Policies
+# Standard Python + HPC Project .gitignore
+# ===============================
+
+# -------------------------------
+# 1️⃣ Python cache / build files
+# -------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Virtual environments
+# Package / build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# -------------------------------
+# 2️⃣ Virtual environments
+# -------------------------------
 .venv/
 env/
 venv/
+ENV/
+env.bak/
+.conda_env/
 
-# Logs and outputs
+# -------------------------------
+# 3️⃣ Logs, outputs, and temp files
+# -------------------------------
 *.log
 *.out
 *.err
 logs/
 outputs/
+results/
+reports/
+
+# Common intermediate data files
+*.pkl
 *.pkl.gz
 *.csv
 *.xlsx
 *.parquet
 *.zip
 
-# OS metadata
+# -------------------------------
+# 4️⃣ IDE / OS metadata
+# -------------------------------
 .DS_Store
 Thumbs.db
-
-# Jupyter
-.ipynb_checkpoints/
-
-# Editor configs
 .idea/
 .vscode/
 
-# Python packaging
-build/
-dist/
-*.egg-info/
-
-# HPC temporary files
-slurm-*.out
-
-# Temporary notebooks or reports
+# -------------------------------
+# 5️⃣ Jupyter notebooks
+# -------------------------------
+.ipynb_checkpoints/
 notebooks/temp_*/
+notebooks/.ipynb_checkpoints/
+
+# -------------------------------
+# 6️⃣ HPC temporary files
+# -------------------------------
+slurm-*.out
+*.sbatch
+*.sh~
+.tmp/
+scratch/
+
+# -------------------------------
+# 7️⃣ Data / secrets (add manually if needed)
+# -------------------------------
+.env
+data/
+data_sample/private_*/  # keep sample data public, exclude private
+*.rds
+*.feather
+
+# -------------------------------
+# 8️⃣ Miscellaneous
+# -------------------------------
+*.bak
+*.swp
+*.tmp

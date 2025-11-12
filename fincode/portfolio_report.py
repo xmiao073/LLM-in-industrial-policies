@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# %%
 """
 Aggregate portfolio results (daily + rolling) and output two tables only:
 1) all_portfolios.csv   Overall metrics for all strategies
@@ -9,36 +8,36 @@ Aggregate portfolio results (daily + rolling) and output two tables only:
 Portfolio naming must include 7 parameters (order):
 holding, period, lag, weight, percent, frequency, return type
 """
-# %%
+
 from __future__ import annotations
-import argparse, re
+import argparse
+import re
 from pathlib import Path
 import pandas as pd
 
 # === Load defaults from config.py (reads .env automatically) ===
 from config import (
-    DATA_DIR as DATA_DIR_DEFAULT,
-    PORTFOLIO_DIR as OUT_DIR_DEFAULT,
-    REGRESSION_DIR as REG_DIR_DEFAULT,
-    debug_print,
+    PORTFOLIO_DIR as OUT_DIR_DEFAULT,  # default portfolio root
 )
 
-# 给本脚本的默认根目录与输出目录
+# Defaults for this script
 DEFAULT_ROOT = Path(OUT_DIR_DEFAULT)                 # 默认到 .env 里的 PORTFOLIO_DIR
 DEFAULT_OUT  = Path(OUT_DIR_DEFAULT) / "portfolio_report"
 
-# %%
+
 def _extract_lag(text: str) -> int | None:
     m = re.search(r"_lag(\d+)", text)
     return int(m.group(1)) if m else None
 
+
 def parse_strategy(row: pd.Series) -> pd.Series:
-    """extract lag & percent from strategy string"""
+    """Extract lag & percent from strategy string."""
     lag = re.search(r"_lag(\d+)", row["strategy"])
     pct = re.search(r"_p(\d+)",   row["strategy"])
     row["lag"] = int(lag.group(1)) if lag else None
     row["percent"] = int(pct.group(1))/100 if pct else None
     return row
+
 
 def infer_from_path(p: Path) -> dict:
     """Infer holding/period/return/sign/weight/frequency from directory tree.
@@ -79,65 +78,78 @@ def infer_from_path(p: Path) -> dict:
             d["return_type"], d["sign"], d["weighting"] = rem[:3]
             d["frequency"] = rem[3] if len(rem) >= 4 else "unknown"
     return d
-# %%
+
+
 def main():
-    pa = argparse.ArgumentParser()
-    pa.add_argument("--root", default=str(DEFAULT_ROOT), help="portfolio root dir")
-    pa.add_argument("--out",  default=str(DEFAULT_OUT),  help="output dir")
+    pa = argparse.ArgumentParser("Aggregate portfolio results")
+    # 支持新老参数名
+    pa.add_argument("--root", default=str(DEFAULT_ROOT), dest="root", help="portfolio root dir")
+    pa.add_argument("--root_dir", dest="root")  # 兼容旧写法
+    pa.add_argument("--out",  default=str(DEFAULT_OUT),  dest="out",  help="output dir")
+    pa.add_argument("--out_dir",  dest="out")  # 兼容旧写法
     args = pa.parse_args()
 
-    root, out = Path(args.root), Path(args.out); out.mkdir(parents=True, exist_ok=True)
+    root, out = Path(args.root), Path(args.out)
+
+    if not root.exists():
+        raise SystemExit(f"[ERROR] portfolio root dir not found: {root}")
+
+    out.mkdir(parents=True, exist_ok=True)
 
     rec_total, rec_year = [], []
 
     for dirpath in root.rglob("*"):
-        if dirpath.name=="overall_summary.csv":
+        if dirpath.name == "overall_summary.csv":
             meta = infer_from_path(dirpath.parent)
             df = pd.read_csv(dirpath).apply(parse_strategy, axis=1)
-            for k,v in meta.items(): df[k]=v
+            for k, v in meta.items():
+                df[k] = v
             rec_total.append(df)
 
-        elif dirpath.name=="yearly_performance.csv":
+        elif dirpath.name == "yearly_performance.csv":
             meta = infer_from_path(dirpath.parent)
             dfy = pd.read_csv(dirpath)
-            dfy["lag"] = dfy["base"].apply(_extract_lag)
-            for k,v in meta.items(): dfy[k]=v
+            if "base" in dfy.columns:
+                dfy["lag"] = dfy["base"].apply(_extract_lag)
+            for k, v in meta.items():
+                dfy[k] = v
             rec_year.append(dfy)
 
-    if rec_total:
-        total = pd.concat(rec_total, ignore_index=True)
-    else:
-        total = pd.DataFrame()
-    if rec_year:
-        yearly = pd.concat(rec_year , ignore_index=True)
-    else:
-        yearly = pd.DataFrame()
+    total = pd.concat(rec_total, ignore_index=True) if rec_total else pd.DataFrame()
+    yearly = pd.concat(rec_year,  ignore_index=True) if rec_year  else pd.DataFrame()
+
+    if total.empty and yearly.empty:
+        raise SystemExit(
+            f"[ERROR] No portfolio result files found under: {root}\n"
+            f"Expected to find 'overall_summary.csv' / 'yearly_performance.csv' in subfolders."
+        )
 
     # Build unified portfolio name including 7 parameters
     # format: holding_period_lag{lag}_weight_p{percent*100}_frequency_returnType
     if not total.empty:
-        total["portfolio"] = (
-            total.apply(lambda r: f"{r['holding']}_{int(r['period'])}_lag{int(r['lag'])}_"
-                                  f"{r['weighting']}_p{int(r['percent']*100)}_"
-                                  f"{r['frequency']}_{r['return_type']}", axis=1)
+        total["portfolio"] = total.apply(
+            lambda r: f"{r['holding']}_{int(r['period'])}_lag{int(r['lag'])}_"
+                      f"{r['weighting']}_p{int(r['percent']*100)}_"
+                      f"{r['frequency']}_{r['return_type']}", axis=1
         )
 
     # yearly: rename top_pct -> percent, then build portfolio the same way
     if not yearly.empty:
         if "top_pct" in yearly.columns and "percent" not in yearly.columns:
             yearly = yearly.rename(columns={"top_pct": "percent"})
-        yearly["portfolio"] = (
-            yearly.apply(lambda r: f"{r['holding']}_{int(r['period'])}_lag{int(r['lag'])}_"
-                                     f"{r['weighting']}_p{int(r['percent']*100)}_"
-                                     f"{r['frequency']}_{r['return_type']}", axis=1)
+        if "lag" not in yearly.columns and "base" in yearly.columns:
+            yearly["lag"] = yearly["base"].apply(_extract_lag)
+        yearly["portfolio"] = yearly.apply(
+            lambda r: f"{r['holding']}_{int(r['period'])}_lag{int(r['lag'])}_"
+                      f"{r['weighting']}_p{int(r['percent']*100)}_"
+                      f"{r['frequency']}_{r['return_type']}", axis=1
         )
 
-    total.to_csv(out/"all_portfolios.csv", index=False)
-    yearly.to_csv(out/"all_yearly.csv" , index=False)
-
-    # Only two outputs as requested
+    total.to_csv(out / "all_portfolios.csv", index=False)
+    yearly.to_csv(out / "all_yearly.csv", index=False)
 
     print("Outputs saved in", out.resolve())
+
 
 if __name__ == "__main__":
     main()

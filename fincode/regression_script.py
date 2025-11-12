@@ -28,13 +28,24 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
+# === Load defaults from config.py (reads .env automatically) ===
+from config import (
+    DATA_DIR as DATA_DIR_DEFAULT,
+    REGRESSION_DIR as OUT_DIR_DEFAULT,
+    YEAR_START as YEAR_START_DEFAULT,
+    WINSOR_P as WINSOR_P_DEFAULT,
+    debug_print,
+)
 
 # ========== Default parameters ==========
-DATA_DIR   = "/hpc2hdd/home/jliu043/policy/data"
-OUT_DIR    = "/hpc2hdd/home/jliu043/policy/regression"
-WINSOR_P   = 0.01      # Winsorize percentile
+# Defaults resolved via config.py (overridable by CLI)
+DATA_DIR   = DATA_DIR_DEFAULT
+OUT_DIR    = OUT_DIR_DEFAULT
+WINSOR_P   = WINSOR_P_DEFAULT
+YEAR_START = YEAR_START_DEFAULT
+
+# Keep script-local constant (not from .env unless你想加到config)
 MIN_N_OBS  = 30        # Minimum observations for each industry
-YEAR_START = 2014      # Earliest policy year to keep
 # ========================================
 
 

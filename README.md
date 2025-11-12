@@ -22,3 +22,13 @@ python scripts/portfolio_script.py \
   --lags 1 3 5 10 \
   --period 1 \
   --dynamic-windows 1 3 6 9 12 24 36
+
+
+# 用样例数据跑一把静态回归（最稳妥）
+python scripts/regression_script.py \
+  --frequency static \
+  --price close \
+  --lags 1 \
+  --periods 1 \
+  --data-dir ./data_sample \
+  --out-dir ./regression_sample

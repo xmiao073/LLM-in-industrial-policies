@@ -15,6 +15,18 @@ import argparse, re
 from pathlib import Path
 import pandas as pd
 
+# === Load defaults from config.py (reads .env automatically) ===
+from config import (
+    DATA_DIR as DATA_DIR_DEFAULT,
+    PORTFOLIO_DIR as OUT_DIR_DEFAULT,
+    REGRESSION_DIR as REG_DIR_DEFAULT,
+    debug_print,
+)
+
+# 给本脚本的默认根目录与输出目录
+DEFAULT_ROOT = Path(OUT_DIR_DEFAULT)                 # 默认到 .env 里的 PORTFOLIO_DIR
+DEFAULT_OUT  = Path(OUT_DIR_DEFAULT) / "portfolio_report"
+
 # %%
 def _extract_lag(text: str) -> int | None:
     m = re.search(r"_lag(\d+)", text)
@@ -70,8 +82,8 @@ def infer_from_path(p: Path) -> dict:
 # %%
 def main():
     pa = argparse.ArgumentParser()
-    pa.add_argument("--root", required=True, help="portfolio root dir")
-    pa.add_argument("--out",  required=True, help="output dir")
+    pa.add_argument("--root", default=str(DEFAULT_ROOT), help="portfolio root dir")
+    pa.add_argument("--out",  default=str(DEFAULT_OUT),  help="output dir")
     args = pa.parse_args()
 
     root, out = Path(args.root), Path(args.out); out.mkdir(parents=True, exist_ok=True)

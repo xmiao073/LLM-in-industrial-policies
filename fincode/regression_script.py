@@ -37,6 +37,65 @@ from config import (
     WINSOR_P as WINSOR_P_DEFAULT,
     debug_print,
 )
+# --- column normalization helpers ---
+def _normalize_policy_cols(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    rename_map = {}
+
+    # date
+    if "date_p" not in df.columns:
+        for cand in ["date_p", "date", "policy_date"]:
+            if cand in df.columns:
+                rename_map[cand] = "date_p"; break
+
+    # industry code
+    if "category_code" not in df.columns:
+        for cand in ["category_code", "Indcd", "industry_code", "ind_code"]:
+            if cand in df.columns:
+                rename_map[cand] = "category_code"; break
+
+    # policy strength
+    if "ind_policy_strength" not in df.columns:
+        for cand in ["ind_policy_strength", "policy_strength", "strength"]:
+            if cand in df.columns:
+                rename_map[cand] = "ind_policy_strength"; break
+
+    if rename_map:
+        df = df.rename(columns=rename_map)
+    return df
+
+
+def _normalize_exposure_cols(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    rename_map = {}
+
+    # stock code
+    if "Stkcd" not in df.columns:
+        for cand in ["Stkcd", "stkcd", "stock_code", "ticker"]:
+            if cand in df.columns:
+                rename_map[cand] = "Stkcd"; break
+
+    # industry code
+    if "category_code" not in df.columns:
+        for cand in ["category_code", "Indcd", "industry_code", "ind_code"]:
+            if cand in df.columns:
+                rename_map[cand] = "category_code"; break
+
+    # weight / revenue %
+    if "rev_pct" not in df.columns:
+        for cand in ["rev_pct", "weight", "w", "exposure_weight"]:
+            if cand in df.columns:
+                rename_map[cand] = "rev_pct"; break
+
+    # city code（有就用，没有就以后用“仅行业”合并）
+    if "city_code" not in df.columns:
+        for cand in ["city_code", "CityCode"]:
+            if cand in df.columns:
+                rename_map[cand] = "city_code"; break
+
+    if rename_map:
+        df = df.rename(columns=rename_map)
+    return df
 
 # ---------- Defaults (overridable by CLI) ----------
 DATA_DIR   = DATA_DIR_DEFAULT
@@ -93,14 +152,20 @@ def _build_lag_sample(df_pol: pd.DataFrame,
 
     # 注意：这里按 (city_code, category_code) 与曝光表合并；
     # 如果你的 exposure 没有 city_code，可改为仅用 category_code 合并。
-    merged = (
-        df_pol.merge(exposure, how="inner", on=["city_code", "category_code"])
-              .assign(weighted_strength=lambda d: d["ind_policy_strength"] * d["rev_pct"])
-              .merge(ohlcv, how="left",
-                     left_on=["Stkcd", "effective_date"],
-                     right_on=["Stkcd", "Trddt"])
-              .drop(columns=["Trddt"])
-    )
+# 优先 city+industry；若 exposure 没有 city_code，则仅按 industry 合并
+keys = ["category_code"]
+if "city_code" in df_pol.columns and "city_code" in exposure.columns:
+    keys = ["city_code", "category_code"]
+
+merged = (
+    df_pol.merge(exposure, how="inner", on=keys)
+          .assign(weighted_strength=lambda d: d["ind_policy_strength"] * d["rev_pct"])
+          .merge(ohlcv, how="left",
+                 left_on=["Stkcd", "effective_date"],
+                 right_on=["Stkcd", "Trddt"])
+          .drop(columns=["Trddt"])
+)
+
 
     # Winsorize 以稳健处理极端值
     lo, hi = merged["weighted_strength"].quantile([winsor_p, 1 - winsor_p])
@@ -241,17 +306,31 @@ def run_regression(frequency: str = "static",
     Path(out_dir).mkdir(parents=True, exist_ok=True)
 
     # ---- Load data ----
-    policy   = pd.read_csv(f"{data_dir}/policy.csv",   parse_dates=["date_p"])
-    exposure = pd.read_csv(f"{data_dir}/exposure.csv")
-    ohlcv    = pd.read_csv(f"{data_dir}/ohlcv.csv", parse_dates=["Trddt"])
+policy   = pd.read_csv(f"{data_dir}/policy.csv")
+exposure = pd.read_csv(f"{data_dir}/exposure.csv")
+ohlcv    = pd.read_csv(f"{data_dir}/ohlcv.csv", parse_dates=["Trddt"])
 
-    # ---- Column validations ----
-    _require_columns(ohlcv, {"Stkcd", "Trddt", "Opnprc", "Clsprc"}, "ohlcv.csv")
-    _require_columns(policy, {"date_p", "category_code", "ind_policy_strength"}, "policy.csv")
+# normalize columns
+policy   = _normalize_policy_cols(policy)
+exposure = _normalize_exposure_cols(exposure)
 
-    # 曝光表：如果你的 exposure 没有 city_code，可将下面一行改成仅 {"category_code","Stkcd","rev_pct"}
-    exposure_required = {"city_code", "category_code", "Stkcd", "rev_pct"}
-    _require_columns(exposure, exposure_required, "exposure.csv")
+# ---- Column validations ----
+_require_columns(ohlcv, {"Stkcd", "Trddt", "Opnprc", "Clsprc"}, "ohlcv.csv")
+_require_columns(policy, {"date_p", "category_code", "ind_policy_strength"}, "policy.csv")
+# 对 exposure：允许没有 city_code（合并时退化为仅按行业合并）
+_require_columns(exposure, {"category_code", "Stkcd", "rev_pct"}, "exposure.csv")
+
+# ohlcv 只保留必要列并规范类型
+ohlcv = (ohlcv[["Stkcd", "Trddt", "Opnprc", "Clsprc"]]
+         .assign(Stkcd=lambda d: d["Stkcd"].astype("int64"))
+         .sort_values(["Stkcd", "Trddt"]))
+exposure = exposure.assign(Stkcd=lambda d: d["Stkcd"].astype("int64"))
+
+# policy 日期解析 & YEAR_START 过滤
+if not np.issubdtype(policy["date_p"].dtype, np.datetime64):
+    policy["date_p"] = pd.to_datetime(policy["date_p"])
+policy = policy.loc[policy["date_p"].dt.year >= YEAR_START]
+
 
     # 类型 & 排序
     ohlcv = (ohlcv[["Stkcd", "Trddt", "Opnprc", "Clsprc"]]

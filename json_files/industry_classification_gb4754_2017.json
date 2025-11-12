@@ -1,0 +1,584 @@
+{
+  "01": {
+    "name": "农业",
+    "category": "A",
+    "sector": "第一产业",
+    "sector_name": "农、林、牧、渔业"
+  },
+  "02": {
+    "name": "林业",
+    "category": "A",
+    "sector": "第一产业",
+    "sector_name": "农、林、牧、渔业"
+  },
+  "03": {
+    "name": "畜牧业",
+    "category": "A",
+    "sector": "第一产业",
+    "sector_name": "农、林、牧、渔业"
+  },
+  "04": {
+    "name": "渔业",
+    "category": "A",
+    "sector": "第一产业",
+    "sector_name": "农、林、牧、渔业"
+  },
+  "05": {
+    "name": "农、林、牧、渔专业及辅助性活动",
+    "category": "A",
+    "sector": "第三产业",
+    "sector_name": "农、林、牧、渔专业及辅助性活动"
+  },
+  "06": {
+    "name": "煤炭开采和洗选业",
+    "category": "B",
+    "sector": "第二产业",
+    "sector_name": "采矿业"
+  },
+  "07": {
+    "name": "石油和天然气开采业",
+    "category": "B",
+    "sector": "第二产业",
+    "sector_name": "采矿业"
+  },
+  "08": {
+    "name": "黑色金属矿采选业",
+    "category": "B",
+    "sector": "第二产业",
+    "sector_name": "采矿业"
+  },
+  "09": {
+    "name": "有色金属矿采选业",
+    "category": "B",
+    "sector": "第二产业",
+    "sector_name": "采矿业"
+  },
+  "10": {
+    "name": "非金属矿采选业",
+    "category": "B",
+    "sector": "第二产业",
+    "sector_name": "采矿业"
+  },
+  "11": {
+    "name": "开采专业及辅助性活动",
+    "category": "B",
+    "sector": "第三产业",
+    "sector_name": "开采专业及辅助性活动"
+  },
+  "12": {
+    "name": "其他采矿业",
+    "category": "B",
+    "sector": "第二产业",
+    "sector_name": "采矿业"
+  },
+  "13": {
+    "name": "农副食品加工业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "14": {
+    "name": "食品制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "15": {
+    "name": "酒、饮料和精制茶制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "16": {
+    "name": "烟草制品业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "17": {
+    "name": "纺织业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "18": {
+    "name": "纺织服装、服饰业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "19": {
+    "name": "皮革、毛皮、羽毛及其制品和制鞋业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "20": {
+    "name": "木材加工和木、竹、藤、棕、草制品业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "21": {
+    "name": "家具制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "22": {
+    "name": "造纸和纸制品业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "23": {
+    "name": "印刷和记录媒介复制业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "24": {
+    "name": "文教、工美、体育和娱乐用品制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "25": {
+    "name": "石油、煤炭及其他燃料加工业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "26": {
+    "name": "化学原料和化学制品制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "27": {
+    "name": "医药制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "28": {
+    "name": "化学纤维制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "29": {
+    "name": "橡胶和塑料制品业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "30": {
+    "name": "非金属矿物制品业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "31": {
+    "name": "黑色金属冶炼和压延加工业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "32": {
+    "name": "有色金属冶炼和压延加工业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "33": {
+    "name": "金属制品业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "34": {
+    "name": "通用设备制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "35": {
+    "name": "专用设备制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "36": {
+    "name": "汽车制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "37": {
+    "name": "铁路、船舶、航空航天和其他运输设备制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "38": {
+    "name": "电气机械和器材制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "39": {
+    "name": "计算机、通信和其他电子设备制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "40": {
+    "name": "仪器仪表制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "41": {
+    "name": "其他制造业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "42": {
+    "name": "废弃资源综合利用业",
+    "category": "C",
+    "sector": "第二产业",
+    "sector_name": "制造业"
+  },
+  "43": {
+    "name": "金属制品、机械和设备修理业",
+    "category": "C",
+    "sector": "第三产业",
+    "sector_name": "金属制品、机械和设备修理业"
+  },
+  "44": {
+    "name": "电力、热力生产和供应业",
+    "category": "D",
+    "sector": "第二产业",
+    "sector_name": "电力、热力、燃气及水生产和供应业"
+  },
+  "45": {
+    "name": "燃气生产和供应业",
+    "category": "D",
+    "sector": "第二产业",
+    "sector_name": "电力、热力、燃气及水生产和供应业"
+  },
+  "46": {
+    "name": "水的生产和供应业",
+    "category": "D",
+    "sector": "第二产业",
+    "sector_name": "电力、热力、燃气及水生产和供应业"
+  },
+  "47": {
+    "name": "房屋建筑业",
+    "category": "E",
+    "sector": "第二产业",
+    "sector_name": "建筑业"
+  },
+  "48": {
+    "name": "土木工程建筑业",
+    "category": "E",
+    "sector": "第二产业",
+    "sector_name": "建筑业"
+  },
+  "49": {
+    "name": "建筑安装业",
+    "category": "E",
+    "sector": "第二产业",
+    "sector_name": "建筑业"
+  },
+  "50": {
+    "name": "建筑装饰、装修和其他建筑业",
+    "category": "E",
+    "sector": "第二产业",
+    "sector_name": "建筑业"
+  },
+  "51": {
+    "name": "批发业",
+    "category": "F",
+    "sector": "第三产业",
+    "sector_name": "批发和零售业"
+  },
+  "52": {
+    "name": "零售业",
+    "category": "F",
+    "sector": "第三产业",
+    "sector_name": "批发和零售业"
+  },
+  "53": {
+    "name": "铁路运输业",
+    "category": "G",
+    "sector": "第三产业",
+    "sector_name": "交通运输、仓储和邮政业"
+  },
+  "54": {
+    "name": "道路运输业",
+    "category": "G",
+    "sector": "第三产业",
+    "sector_name": "交通运输、仓储和邮政业"
+  },
+  "55": {
+    "name": "水上运输业",
+    "category": "G",
+    "sector": "第三产业",
+    "sector_name": "交通运输、仓储和邮政业"
+  },
+  "56": {
+    "name": "航空运输业",
+    "category": "G",
+    "sector": "第三产业",
+    "sector_name": "交通运输、仓储和邮政业"
+  },
+  "57": {
+    "name": "管道运输业",
+    "category": "G",
+    "sector": "第三产业",
+    "sector_name": "交通运输、仓储和邮政业"
+  },
+  "58": {
+    "name": "多式联运和运输代理业",
+    "category": "G",
+    "sector": "第三产业",
+    "sector_name": "交通运输、仓储和邮政业"
+  },
+  "59": {
+    "name": "装卸搬运和仓储业",
+    "category": "G",
+    "sector": "第三产业",
+    "sector_name": "交通运输、仓储和邮政业"
+  },
+  "60": {
+    "name": "邮政业",
+    "category": "G",
+    "sector": "第三产业",
+    "sector_name": "交通运输、仓储和邮政业"
+  },
+  "61": {
+    "name": "住宿业",
+    "category": "H",
+    "sector": "第三产业",
+    "sector_name": "住宿和餐饮业"
+  },
+  "62": {
+    "name": "餐饮业",
+    "category": "H",
+    "sector": "第三产业",
+    "sector_name": "住宿和餐饮业"
+  },
+  "63": {
+    "name": "电信、广播电视和卫星传输服务",
+    "category": "I",
+    "sector": "第三产业",
+    "sector_name": "信息传输、软件和信息技术服务业"
+  },
+  "64": {
+    "name": "互联网和相关服务",
+    "category": "I",
+    "sector": "第三产业",
+    "sector_name": "信息传输、软件和信息技术服务业"
+  },
+  "65": {
+    "name": "软件和信息技术服务业",
+    "category": "I",
+    "sector": "第三产业",
+    "sector_name": "信息传输、软件和信息技术服务业"
+  },
+  "66": {
+    "name": "货币金融服务",
+    "category": "J",
+    "sector": "第三产业",
+    "sector_name": "金融业"
+  },
+  "67": {
+    "name": "资本市场服务",
+    "category": "J",
+    "sector": "第三产业",
+    "sector_name": "金融业"
+  },
+  "68": {
+    "name": "保险业",
+    "category": "J",
+    "sector": "第三产业",
+    "sector_name": "金融业"
+  },
+  "69": {
+    "name": "其他金融业",
+    "category": "J",
+    "sector": "第三产业",
+    "sector_name": "金融业"
+  },
+  "70": {
+    "name": "房地产业",
+    "category": "K",
+    "sector": "第三产业",
+    "sector_name": "房地产业"
+  },
+  "71": {
+    "name": "租赁业",
+    "category": "L",
+    "sector": "第三产业",
+    "sector_name": "租赁和商务服务业"
+  },
+  "72": {
+    "name": "商务服务业",
+    "category": "L",
+    "sector": "第三产业",
+    "sector_name": "租赁和商务服务业"
+  },
+  "73": {
+    "name": "研究和试验发展",
+    "category": "M",
+    "sector": "第三产业",
+    "sector_name": "科学研究和技术服务业"
+  },
+  "74": {
+    "name": "专业技术服务业",
+    "category": "M",
+    "sector": "第三产业",
+    "sector_name": "科学研究和技术服务业"
+  },
+  "75": {
+    "name": "科技推广和应用服务业",
+    "category": "M",
+    "sector": "第三产业",
+    "sector_name": "科学研究和技术服务业"
+  },
+  "76": {
+    "name": "水利管理业",
+    "category": "N",
+    "sector": "第三产业",
+    "sector_name": "水利、环境和公共设施管理业"
+  },
+  "77": {
+    "name": "生态保护和环境治理业",
+    "category": "N",
+    "sector": "第三产业",
+    "sector_name": "水利、环境和公共设施管理业"
+  },
+  "78": {
+    "name": "公共设施管理业",
+    "category": "N",
+    "sector": "第三产业",
+    "sector_name": "水利、环境和公共设施管理业"
+  },
+  "79": {
+    "name": "土地管理业",
+    "category": "N",
+    "sector": "第三产业",
+    "sector_name": "水利、环境和公共设施管理业"
+  },
+  "80": {
+    "name": "居民服务业",
+    "category": "O",
+    "sector": "第三产业",
+    "sector_name": "居民服务、修理和其他服务业"
+  },
+  "81": {
+    "name": "机动车、电子产品和日用产品修理业",
+    "category": "O",
+    "sector": "第三产业",
+    "sector_name": "居民服务、修理和其他服务业"
+  },
+  "82": {
+    "name": "其他服务业",
+    "category": "O",
+    "sector": "第三产业",
+    "sector_name": "居民服务、修理和其他服务业"
+  },
+  "83": {
+    "name": "教育",
+    "category": "P",
+    "sector": "第三产业",
+    "sector_name": "教育"
+  },
+  "84": {
+    "name": "卫生",
+    "category": "Q",
+    "sector": "第三产业",
+    "sector_name": "卫生和社会工作"
+  },
+  "85": {
+    "name": "社会工作",
+    "category": "Q",
+    "sector": "第三产业",
+    "sector_name": "卫生和社会工作"
+  },
+  "86": {
+    "name": "新闻和出版业",
+    "category": "R",
+    "sector": "第三产业",
+    "sector_name": "文化、体育和娱乐业"
+  },
+  "87": {
+    "name": "广播、电视、电影和录音制作业",
+    "category": "R",
+    "sector": "第三产业",
+    "sector_name": "文化、体育和娱乐业"
+  },
+  "88": {
+    "name": "文化艺术业",
+    "category": "R",
+    "sector": "第三产业",
+    "sector_name": "文化、体育和娱乐业"
+  },
+  "89": {
+    "name": "体育",
+    "category": "R",
+    "sector": "第三产业",
+    "sector_name": "文化、体育和娱乐业"
+  },
+  "90": {
+    "name": "娱乐业",
+    "category": "R",
+    "sector": "第三产业",
+    "sector_name": "文化、体育和娱乐业"
+  },
+  "91": {
+    "name": "中国共产党机关",
+    "category": "S",
+    "sector": "第三产业",
+    "sector_name": "公共管理、社会保障和社会组织"
+  },
+  "92": {
+    "name": "国家机构",
+    "category": "S",
+    "sector": "第三产业",
+    "sector_name": "公共管理、社会保障和社会组织"
+  },
+  "93": {
+    "name": "人民政协、民主党派",
+    "category": "S",
+    "sector": "第三产业",
+    "sector_name": "公共管理、社会保障和社会组织"
+  },
+  "94": {
+    "name": "社会保障",
+    "category": "S",
+    "sector": "第三产业",
+    "sector_name": "公共管理、社会保障和社会组织"
+  },
+  "95": {
+    "name": "群众团体、社会团体和其他成员组织",
+    "category": "S",
+    "sector": "第三产业",
+    "sector_name": "公共管理、社会保障和社会组织"
+  },
+  "96": {
+    "name": "基层群众自治组织及其他组织",
+    "category": "S",
+    "sector": "第三产业",
+    "sector_name": "公共管理、社会保障和社会组织"
+  },
+  "97": {
+    "name": "国际组织",
+    "category": "T",
+    "sector": "第三产业",
+    "sector_name": "国际组织"
+  }
+}

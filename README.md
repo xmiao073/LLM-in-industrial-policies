@@ -1,7 +1,7 @@
 # 🧠 LLM in Industrial Policies
 
 > Exploring how Large Language Models (LLMs) and industrial policy signals interact to generate cross-industry insights and portfolio effects.
-> ![CI](https://github.com/xmiao073/LLM-in-industrial-policies/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/xmiao073/LLM-in-industrial-policies/actions/workflows/ci.yml/badge.svg)
 
 ---
 

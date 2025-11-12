@@ -22,9 +22,6 @@ LLM-in-industrial-policies/
 ├── requirements.txt
 └── README.md
 
-yaml
-复制代码
-
 ---
 
 ## ⚙️ Environment Setup
@@ -49,24 +46,16 @@ YEAR_START=2014
 🚀 Quickstart
 1️⃣ Regression (政策回归分析)
 运行回归，评估行业收益对政策暴露的敏感度：
-
-bash
-复制代码
 python fincode/regression_script.py \
   --frequency static \
   --price close \
   --lags 1 \
   --periods 1
 输出示例：
-
-复制代码
 regression/
 └── industry_regressions_close_period1_static.csv
 2️⃣ Portfolio Construction (组合构建)
 基于回归结果构建投资组合：
-
-bash
-复制代码
 python fincode/portfolio_script.py \
   --frequency static \
   --return_type close_close \
@@ -76,21 +65,12 @@ python fincode/portfolio_script.py \
   --lags 1 \
   --period 1
 输出示例：
-
-swift
-复制代码
 portfolio/
 └── daily/close_close/pos/equal/static/overall_summary.csv
 3️⃣ Portfolio Aggregation (结果汇总)
 聚合所有组合结果：
-
-bash
-复制代码
 python fincode/portfolio_report.py
 输出：
-
-bash
-复制代码
 portfolio/portfolio_report/
 ├── all_portfolios.csv
 └── all_yearly.csv

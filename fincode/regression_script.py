@@ -1,21 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-/**
- * Unified industry-level OLS regressions.
- * --------------------------------------
- * Model:   return = α + β · weighted_strength
- *
- * CLI example:
- *   python regression_script.py --frequency dynamic --price open --lags 1 3 5 10 --periods 1 3 5
- *
- * The script can also be imported:
- *   import regression_script as reg
- *   reg.run_regression(frequency="static", price="close")
- *
- * @author  jliu
- * @version 1.0
- */
+Unified industry-level OLS regressions (config-enabled & robust).
+
+Model:
+    return = α + β · weighted_strength
+
+Examples:
+    # 静态（最小可复现）
+    python fincode/regression_script.py --frequency static --price close --lags 1 --periods 1
+
+    # 动态（滚动月窗）
+    python fincode/regression_script.py --frequency dynamic --price open --lags 1 3 5 --periods 1 3 \
+        --dynamic-windows 1 3 6 9 12 24 36
+
+Notes:
+    - 默认路径与参数均来自 .env / config.py，可用 CLI 覆盖
+    - frequency=dynamic 且未给 --dynamic-windows 时，按“按年份分组”回归
 """
 
 from __future__ import annotations
@@ -37,29 +38,25 @@ from config import (
     debug_print,
 )
 
-# ========== Default parameters ==========
-# Defaults resolved via config.py (overridable by CLI)
+# ---------- Defaults (overridable by CLI) ----------
 DATA_DIR   = DATA_DIR_DEFAULT
 OUT_DIR    = OUT_DIR_DEFAULT
 WINSOR_P   = WINSOR_P_DEFAULT
 YEAR_START = YEAR_START_DEFAULT
-
-# Keep script-local constants here
-MIN_N_OBS  = 30
-# ========================================
+MIN_N_OBS  = 30  # 每个行业最小样本数
 
 
-# ---------- Utilities ----------
+# ===================== Utilities =====================
+def _require_columns(df: pd.DataFrame, required: set[str], name: str):
+    missing = required - set(df.columns)
+    if missing:
+        raise SystemExit(f"{name} 缺少列: {sorted(missing)}\n"
+                         f"请对照 data_sample/*.csv 的列名或调整本脚本的列名映射。")
+
+
 def _compute_returns(ohlcv: pd.DataFrame, price_col: str,
                      periods: Sequence[int]) -> pd.DataFrame:
-    """
-    /** Compute daily and multi-day (cumulative) returns.
-     *  @param {DataFrame} ohlcv       Source price table.
-     *  @param {str}       price_col   "Opnprc" | "Clsprc".
-     *  @param {List[int]} periods     e.g. [1,3,5].
-     *  @return {DataFrame}            ohlcv with extra return columns.
-     */
-    """
+    """计算 1日与多日累计收益（向前视窗）。"""
     if 1 in periods:
         col_name = f"{price_col.lower()}_ret"
         ohlcv[col_name] = ohlcv.groupby("Stkcd")[price_col].pct_change()
@@ -68,6 +65,7 @@ def _compute_returns(ohlcv: pd.DataFrame, price_col: str,
         if p == 1:
             continue
         col_name = f"cum_{price_col.lower()}_ret_{p}d"
+        # 向前 p 日累计收益（右对齐到窗口起点）
         ohlcv[col_name] = (
             ohlcv.groupby("Stkcd")[price_col]
                  .transform(lambda s: s.shift(-p) / s - 1)
@@ -82,17 +80,10 @@ def _build_lag_sample(df_pol: pd.DataFrame,
                       ohlcv: pd.DataFrame,
                       trading_dates: np.ndarray,
                       winsor_p: float) -> pd.DataFrame:
-    """
-    /** Merge policy, exposure and return data; create lagged sample.
-     *  @param {DataFrame} df_pol        Policy table.
-     *  @param {int}       lag           Lag in trading days.
-     *  @param {str}       y_col         Return column to be explained.
-     *  @return {DataFrame}              Cleaned & merged sample.
-     */
-    """
+    """合并政策 × 曝光 × 收益，并将政策日期映射到滞后 lag 的交易日。"""
+    # 将政策日期映射到第 lag 个不早于政策日的交易日
     idx = np.searchsorted(trading_dates, df_pol["date_p"].values, side="left")
     eff_idx = idx + lag
-
     eff_date = np.full(len(df_pol), np.datetime64("NaT"), dtype="datetime64[ns]")
     mask = eff_idx < len(trading_dates)
     eff_date[mask] = trading_dates[eff_idx[mask]]
@@ -100,6 +91,8 @@ def _build_lag_sample(df_pol: pd.DataFrame,
     df_pol = df_pol.copy()
     df_pol["effective_date"] = pd.to_datetime(eff_date)
 
+    # 注意：这里按 (city_code, category_code) 与曝光表合并；
+    # 如果你的 exposure 没有 city_code，可改为仅用 category_code 合并。
     merged = (
         df_pol.merge(exposure, how="inner", on=["city_code", "category_code"])
               .assign(weighted_strength=lambda d: d["ind_policy_strength"] * d["rev_pct"])
@@ -109,6 +102,7 @@ def _build_lag_sample(df_pol: pd.DataFrame,
               .drop(columns=["Trddt"])
     )
 
+    # Winsorize 以稳健处理极端值
     lo, hi = merged["weighted_strength"].quantile([winsor_p, 1 - winsor_p])
     merged["weighted_strength"] = merged["weighted_strength"].clip(lo, hi)
 
@@ -116,11 +110,7 @@ def _build_lag_sample(df_pol: pd.DataFrame,
 
 
 def _run_industry_ols(df: pd.DataFrame, y_col: str, lag_label) -> pd.DataFrame:
-    """
-    /** Run cross-sectional OLS for each industry.
-     *  @return {DataFrame} β, t, p, r², n_obs, lag
-     */
-    """
+    """行业截面回归：返回 beta, t, p, r2, n_obs, lag。"""
     out = []
     for ind, sub in df.groupby("category_code"):
         if len(sub) < MIN_N_OBS:
@@ -129,23 +119,20 @@ def _run_industry_ols(df: pd.DataFrame, y_col: str, lag_label) -> pd.DataFrame:
         model = sm.OLS(sub[y_col], X).fit()
         out.append({
             "category_code": ind,
-            "beta":  model.params["weighted_strength"],
-            "t":     model.tvalues["weighted_strength"],
-            "p":     model.pvalues["weighted_strength"],
+            "beta":  model.params.get("weighted_strength", np.nan),
+            "t":     model.tvalues.get("weighted_strength", np.nan),
+            "p":     model.pvalues.get("weighted_strength", np.nan),
             "r2":    model.rsquared,
             "n_obs": int(model.nobs),
-            "lag":   lag_label
+            "lag":   lag_label,
         })
     return pd.DataFrame(out)
 
 
 def _run_yearly_industry_ols(df: pd.DataFrame, y_col: str, lag_label) -> pd.DataFrame:
-    """
-    /** Further split by year and run OLS.
-     *  @return {DataFrame}  Same as `_run_industry_ols` plus `year`.
-     */
-    """
+    """按年份切分样本做行业回归。"""
     yearly_out = []
+    df = df[df["effective_date"].notna()]
     for yr, sub in df.groupby(df["effective_date"].dt.year):
         res = _run_industry_ols(sub, y_col, lag_label)
         if not res.empty:
@@ -155,13 +142,7 @@ def _run_yearly_industry_ols(df: pd.DataFrame, y_col: str, lag_label) -> pd.Data
 
 
 def _assign_window_id(dates: pd.Series, window_months: int, anchor_month: int = 1) -> pd.Series:
-    """
-    /** Assign a non-overlapping time-window id by months.
-     *  Windows start at `anchor_month` of each year (default: January).
-     *  Example: window_months=3 => Jan-Mar, Apr-Jun, Jul-Sep, Oct-Dec.
-     */
-    """
-    # Normalize to month integers since year 0 and bucket by window size
+    """固长月窗分桶（与 anchor_month 对齐，默认1月）。"""
     months_since_anchor = dates.dt.year * 12 + (dates.dt.month - anchor_month)
     return (months_since_anchor // window_months).astype("Int64")
 
@@ -170,43 +151,33 @@ def _run_windowed_industry_ols(df: pd.DataFrame,
                                y_col: str,
                                lag_label,
                                window_months: int) -> pd.DataFrame:
-    """
-    /** Split sample by fixed-length month windows and run OLS within each window.
-     *  Adds metadata columns: window_months, window_start, window_end.
-     */
-    """
+    """固定长度月窗（不重叠）做行业回归，附带窗口起止时间。"""
+    if df.empty:
+        return pd.DataFrame()
+    df = df[df["effective_date"].notna()].copy()
     if df.empty:
         return pd.DataFrame()
 
-    df = df.copy()
-    df = df[df["effective_date"].notna()]
-    if df.empty:
-        return pd.DataFrame()
-
-    df["_window_id"] = _assign_window_id(df["effective_date"], window_months, anchor_month=1)
-
-    windowed_out: list[pd.DataFrame] = []
-    for wid, sub in df.groupby("_window_id"):
+    df["_wid"] = _assign_window_id(df["effective_date"], window_months, anchor_month=1)
+    outs = []
+    for wid, sub in df.groupby("_wid"):
         if sub.empty:
             continue
         res = _run_industry_ols(sub, y_col, lag_label)
         if res.empty:
             continue
-        # Compute window start/end aligned to the bucket defined by _assign_window_id
         any_date = sub["effective_date"].iloc[0]
-        months_since_anchor = any_date.year * 12 + (any_date.month - 1)  # anchor at January
+        months_since_anchor = any_date.year * 12 + (any_date.month - 1)
         bucket_start_msa = (months_since_anchor // window_months) * window_months
         start_year = bucket_start_msa // 12
         start_month_num = (bucket_start_msa % 12) + 1
         start_month = pd.Timestamp(year=int(start_year), month=int(start_month_num), day=1)
-        # Window end is the last day of the end month in this bucket
         end_month_last_day = start_month + pd.offsets.MonthEnd(window_months)
         res["window_months"] = int(window_months)
         res["window_start"] = start_month
         res["window_end"] = end_month_last_day
-        windowed_out.append(res)
-
-    return pd.concat(windowed_out, ignore_index=True) if windowed_out else pd.DataFrame()
+        outs.append(res)
+    return pd.concat(outs, ignore_index=True) if outs else pd.DataFrame()
 
 
 def _run_rolling_window_industry_ols(df: pd.DataFrame,
@@ -214,45 +185,32 @@ def _run_rolling_window_industry_ols(df: pd.DataFrame,
                                      lag_label,
                                      window_months: int,
                                      step_months: int) -> pd.DataFrame:
-    """
-    /** Rolling month-windows with configurable step.
-     *  Example (24m, step=12): 2014-01~2015-12, 2015-01~2016-12, ...
-     *  Adds: window_months, window_step_months, window_start, window_end.
-     */
-    """
+    """滚动月窗（自定义步长）做行业回归。"""
+    if df.empty:
+        return pd.DataFrame()
+    df = df[df["effective_date"].notna()].copy()
     if df.empty:
         return pd.DataFrame()
 
-    df = df.copy()
-    df = df[df["effective_date"].notna()]
-    if df.empty:
-        return pd.DataFrame()
-
-    # Build month indices
     eff_month = df["effective_date"].dt.to_period("M").dt.to_timestamp()
     df["_month_start"] = eff_month
-    df["_month_id"] = df["_month_start"].dt.year * 12 + (df["_month_start"].dt.month - 1)
+    df["_mid"] = df["_month_start"].dt.year * 12 + (df["_month_start"].dt.month - 1)
 
-    # Anchor at YEAR_START-01
     anchor_start = pd.Timestamp(year=YEAR_START, month=1, day=1)
     anchor_id = anchor_start.year * 12 + (anchor_start.month - 1)
+    min_id = int(max(anchor_id, int(df["_mid"].min())))
+    max_id = int(df["_mid"].max())
 
-    min_id = int(max(anchor_id, int(df["_month_id"].min())))
-    max_id = int(df["_month_id"].max())
-
-    windowed_out: list[pd.DataFrame] = []
+    outs = []
     for start_id in range(min_id, max_id - window_months + 2, step_months):
         end_id = start_id + window_months - 1
         if end_id > max_id:
             break
-
-        # Convert ids to timestamps
         start_year = start_id // 12
         start_month = (start_id % 12) + 1
         start_ts = pd.Timestamp(year=int(start_year), month=int(start_month), day=1)
         end_ts = start_ts + pd.offsets.MonthEnd(window_months)
-
-        sub = df[(df["_month_id"] >= start_id) & (df["_month_id"] <= end_id)]
+        sub = df[(df["_mid"] >= start_id) & (df["_mid"] <= end_id)]
         if sub.empty:
             continue
         res = _run_industry_ols(sub, y_col, lag_label)
@@ -262,12 +220,11 @@ def _run_rolling_window_industry_ols(df: pd.DataFrame,
         res["window_step_months"] = int(step_months)
         res["window_start"] = start_ts
         res["window_end"] = end_ts
-        windowed_out.append(res)
+        outs.append(res)
+    return pd.concat(outs, ignore_index=True) if outs else pd.DataFrame()
 
-    return pd.concat(windowed_out, ignore_index=True) if windowed_out else pd.DataFrame()
 
-
-# ---------- Core runner ----------
+# ===================== Core runner =====================
 def run_regression(frequency: str = "static",
                    price: str = "open",
                    lags: Sequence[int] | None = None,
@@ -276,32 +233,31 @@ def run_regression(frequency: str = "static",
                    data_dir: str = DATA_DIR,
                    out_dir: str = OUT_DIR,
                    winsor_p: float = WINSOR_P) -> None:
-    """
-    /** Entry point callable by other scripts.
-     *  @param {str} frequency  "static" | "dynamic"
-     *  @param {str} price      "open" | "close"
-     *  @param {List[int]} lags      List of lags (e.g. [1,3,5,10])
-     *  @param {List[int]} periods   Holding periods (e.g. [1,3,5,10])
-     */
-    """
+    """主流程，可供 import 调用。"""
     lags = list(lags or [1, 3, 5, 10])
     periods = list(periods or [1])
 
     price_col = "Opnprc" if price == "open" else "Clsprc"
     Path(out_dir).mkdir(parents=True, exist_ok=True)
 
-    # ---- 0) Load data ----
+    # ---- Load data ----
     policy   = pd.read_csv(f"{data_dir}/policy.csv",   parse_dates=["date_p"])
     exposure = pd.read_csv(f"{data_dir}/exposure.csv")
-    usecols  = ["Stkcd", "Trddt", price_col]
-    ohlcv    = (
-        pd.read_csv(f"{data_dir}/ohlcv.csv", usecols=usecols, parse_dates=["Trddt"])
-          .assign(Stkcd=lambda d: d["Stkcd"].astype("int32"))
-          .sort_values(["Stkcd", "Trddt"])
-    )
+    ohlcv    = pd.read_csv(f"{data_dir}/ohlcv.csv", parse_dates=["Trddt"])
 
-    if price_col not in ohlcv.columns:
-        raise KeyError(f"{price_col} not found in ohlcv.csv.")
+    # ---- Column validations ----
+    _require_columns(ohlcv, {"Stkcd", "Trddt", "Opnprc", "Clsprc"}, "ohlcv.csv")
+    _require_columns(policy, {"date_p", "category_code", "ind_policy_strength"}, "policy.csv")
+
+    # 曝光表：如果你的 exposure 没有 city_code，可将下面一行改成仅 {"category_code","Stkcd","rev_pct"}
+    exposure_required = {"city_code", "category_code", "Stkcd", "rev_pct"}
+    _require_columns(exposure, exposure_required, "exposure.csv")
+
+    # 类型 & 排序
+    ohlcv = (ohlcv[["Stkcd", "Trddt", "Opnprc", "Clsprc"]]
+             .assign(Stkcd=lambda d: d["Stkcd"].astype("int64"))
+             .sort_values(["Stkcd", "Trddt"]))
+    exposure = exposure.assign(Stkcd=lambda d: d["Stkcd"].astype("int64"))
 
     # Compute returns
     ohlcv = _compute_returns(ohlcv, price_col, periods)
@@ -312,18 +268,18 @@ def run_regression(frequency: str = "static",
     trading_dates = np.sort(ohlcv["Trddt"].unique())
     print(f"[INFO] Data loaded – policy:{policy.shape}, exposure:{exposure.shape}, ohlcv:{ohlcv.shape}")
 
-    # ---- 1) Main loops ----
+    # ---- Main loops ----
     for period in periods:
         y_col = (f"{price_col.lower()}_ret"
                  if period == 1
                  else f"cum_{price_col.lower()}_ret_{period}d")
 
-        # Decide dynamic window list: if not provided, fall back to yearly behavior
+        # 动态窗口列表：未提供则按“按年”动态
         windows_to_run: List[int | None]
         if frequency == "dynamic" and dynamic_windows:
-            windows_to_run = list(dynamic_windows)  # type: ignore[assignment]
+            windows_to_run = list(dynamic_windows)  # 滚动月窗
         else:
-            windows_to_run = [None]
+            windows_to_run = [None]  # 按年
 
         for win in windows_to_run:
             all_res = []
@@ -334,72 +290,78 @@ def run_regression(frequency: str = "static",
 
                 if frequency == "static":
                     res = _run_industry_ols(sample, y_col, lag_label=lag)
+
                 else:
                     if win is None:
+                        # 动态：按年
                         res = _run_yearly_industry_ols(sample, y_col, lag_label=lag)
                     else:
+                        # 动态：滚动月窗
                         wm = int(win)
-                        # Step rule: if wm >= 12 → step 12 months; else step = wm
                         step_m = 12 if wm >= 12 else wm
-                        res = _run_rolling_window_industry_ols(sample, y_col, lag_label=lag,
-                                                               window_months=wm, step_months=step_m)
+                        res = _run_rolling_window_industry_ols(
+                            sample, y_col, lag_label=lag,
+                            window_months=wm, step_months=step_m
+                        )
 
                 if not res.empty:
                     all_res.append(res)
 
+            # 保存
             if not all_res:
-                tag = f"dynamic_{win}m" if (frequency == "dynamic" and win is not None) else ("dynamic" if frequency == "dynamic" else "static")
+                tag = (f"dynamic_{win}m" if (frequency == "dynamic" and win is not None)
+                       else ("dynamic" if frequency == "dynamic" else "static"))
                 print(f"[WARN] No valid results for period={period} ({tag}).")
                 continue
 
             df_out = pd.concat(all_res, ignore_index=True)
             if frequency == "static":
                 freq_tag = "static"
-                csv_name = f"industry_regressions_{price}_period{period}_{freq_tag}.csv"
             else:
-                if win is None:
-                    freq_tag = "dynamic"
-                    csv_name = f"industry_regressions_{price}_period{period}_{freq_tag}.csv"
-                else:
-                    freq_tag = f"dynamic_{int(win)}m"
-                    csv_name = f"industry_regressions_{price}_period{period}_{freq_tag}.csv"
+                freq_tag = (f"dynamic_{int(win)}m" if win is not None else "dynamic")
 
+            csv_name = f"industry_regressions_{price}_period{period}_{freq_tag}.csv"
             out_path = Path(out_dir) / csv_name
             df_out.to_csv(out_path, index=False)
             print(f"[INFO] Results saved → {out_path.resolve()}")
 
 
-# ---------- CLI ----------
+# ===================== CLI =====================
 def _parse_cli() -> argparse.Namespace:
-    """Parse command-line arguments."""
+    """Parse command-line arguments (dash style, with underscore aliases)."""
     parser = argparse.ArgumentParser(description="Unified Industry Regression Script")
 
     parser.add_argument("--frequency", choices=["static", "dynamic"],
-                        default="static", help="static: all years together; dynamic: yearly regression")
+                        default="static", help="static: 全样本; dynamic: 按年/按窗口分组")
 
     parser.add_argument("--price", choices=["open", "close"],
-                        default="open", help="Return based on open or close price")
+                        default="open", help="收益基于 open 或 close 价计算")
 
     parser.add_argument("--lags", nargs="+", type=int, default=[1, 3, 5, 10],
-                        help="Lag days (e.g. --lags 1 3 5)")
+                        help="滞后交易日，如 --lags 1 3 5")
 
     parser.add_argument("--periods", nargs="+", type=int, default=[1],
-                        help="Holding periods in days (e.g. --periods 1 3 5)")
+                        help="持有期（天），如 --periods 1 3 5")
 
-    parser.add_argument("--data-dir", default=DATA_DIR,
-                        help=f"Directory containing policy, exposure, ohlcv csv (default: {DATA_DIR})")
+    # 路径（短横线为主），并兼容旧下划线名
+    parser.add_argument("--data-dir", dest="data_dir", default=DATA_DIR,
+                        help=f"包含 policy/exposure/ohlcv 的目录（默认: {DATA_DIR})")
+    parser.add_argument("--data_dir", dest="data_dir")  # 兼容
 
-    parser.add_argument("--out-dir", default=OUT_DIR,
-                        help=f"Output directory (default: {OUT_DIR})")
+    parser.add_argument("--out-dir", dest="out_dir", default=OUT_DIR,
+                        help=f"输出目录（默认: {OUT_DIR})")
+    parser.add_argument("--out_dir", dest="out_dir")  # 兼容
 
-    parser.add_argument("--dynamic-windows", nargs="+", type=int, default=None,
-                        help="For frequency=dynamic, month window sizes to group by (e.g. --dynamic-windows 1 3 6 9 12 24 36). If omitted, groups by calendar year.")
+    parser.add_argument("--dynamic-windows", dest="dynamic_windows", nargs="+", type=int, default=None,
+                        help="当 frequency=dynamic 时可指定月窗（如 1 3 6 9 12 24 36）；不指定则按年份分组。")
+    parser.add_argument("--dynamic_windows", dest="dynamic_windows", nargs="+", type=int)  # 兼容
 
     return parser.parse_args()
 
 
 def main() -> None:
     """CLI wrapper."""
+    debug_print()  # 打印当前 .env / config 生效配置，便于排错
     args = _parse_cli()
     run_regression(frequency=args.frequency,
                    price=args.price,
@@ -411,4 +373,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main() 
+    main()

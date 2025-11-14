@@ -1,11 +1,11 @@
-# 🧠 LLM in Industrial Policies
+# LLM in Industrial Policies
 
 > Exploring how Large Language Models (LLMs) and industrial policy signals interact to generate cross-industry insights and portfolio effects.
-![CI](https://github.com/xmiao073/LLM-in-industrial-policies/actions/workflows/ci.yml/badge.svg)
 
+![CI](https://github.com/xmiao073/LLM-in-industrial-policies/actions/workflows/ci.yml/badge.svg)
 ---
 
-## 📦 Project Structure
+## Project Structure
 
 LLM-in-industrial-policies/
 ├── fincode/
@@ -14,49 +14,53 @@ LLM-in-industrial-policies/
 │ ├── portfolio_report.py # Aggregates portfolio results into summary tables
 │ └── ...
 ├── data_sample/ # Minimal reproducible dataset
-│ ├── ohlcv.csv
-│ ├── exposure.csv
-│ ├── policy.csv
+│ ├── ohlcv.csv # Stock daily data (open, close, etc.)
+│ ├── exposure.csv # Stock-industry mapping and weights
+│ ├── policy.csv # Industry-level policy intensity sequence
 │ └── README.md
 ├── config.py # Loads .env configuration
 ├── .env # Default directories and global settings
-├── requirements.txt
-└── README.md
-
+├── requirements.txt # Python dependencies
+└── README.md # Project overview and instructions
 ---
 
-## ⚙️ Environment Setup
+## Environment Setup
 
-```bash
-git clone https://github.com/xmiao073/LLM-in-industrial-policies.git
-cd LLM-in-industrial-policies
+1. **Clone the repository**
+    git clone https://github.com/xmiao073/LLM-in-industrial-policies.git
+    cd LLM-in-industrial-policies
 
-python -m venv .venv
-source .venv/bin/activate    # (Windows 用 .venv\Scripts\activate)
+2. **Create and activate a virtual environment**
+    python -m venv .venv
+    source .venv/bin/activate   # For Windows: .venv\Scripts\activate
 
-pip install -r requirements.txt
-.env Example
-ini
-复制代码
-DATA_DIR=./data_sample
-REGRESSION_DIR=./regression
-PORTFOLIO_DIR=./portfolio
-WINSOR_P=0.01
-MIN_N_OBS=30
-YEAR_START=2014
-🚀 Quickstart
-1️⃣ Regression (政策回归分析)
-运行回归，评估行业收益对政策暴露的敏感度：
+3. **Install the required dependencies**
+    pip install -r requirements.txt
+
+4. **Set up your .env configuration**
+    DATA_DIR=./data_sample
+    REGRESSION_DIR=./regression
+    PORTFOLIO_DIR=./portfolio
+    WINSOR_P=0.01
+    MIN_N_OBS=30
+    YEAR_START=2014
+
+## Quickstart
+1. **Regression — Policy Impact Analysis**
+Run the regression to assess industry returns’ sensitivity to policy exposure:
+
 python fincode/regression_script.py \
   --frequency static \
   --price close \
   --lags 1 \
   --periods 1
-输出示例：
+  
+Output：
 regression/
 └── industry_regressions_close_period1_static.csv
-2️⃣ Portfolio Construction (组合构建)
-基于回归结果构建投资组合：
+
+2. **Portfolio Construction — Based on Regression Results**
+Build a portfolio using regression outcomes:
 python fincode/portfolio_script.py \
   --frequency static \
   --return_type close_close \
@@ -65,54 +69,50 @@ python fincode/portfolio_script.py \
   --weighting equal \
   --lags 1 \
   --period 1
-输出示例：
+   
+Output：
 portfolio/
 └── daily/close_close/pos/equal/static/overall_summary.csv
-3️⃣ Portfolio Aggregation (结果汇总)
-聚合所有组合结果：
+
+3. **Portfolio Aggregation — Summary Tables**
+Aggregate all portfolio results:
 python fincode/portfolio_report.py
-输出：
+
+Output：
 portfolio/portfolio_report/
 ├── all_portfolios.csv
 └── all_yearly.csv
-📊 Example Output Snapshot
-Portfolio	Mean Return	Sharpe	Win Rate	Period
-rolling_p3_lag1_equal_p70_static_close_close	0.018	0.85	67%	2017–2024
-daily_1_lag1_equal_p50_dynamic_close_close	0.012	0.73	61%	2017–2024
 
-(示例数据，由 portfolio_report.py 汇总生成)
+## Data Description
+  File	                        Description
+ohlcv.csv	       Stock daily trading data (open, close, etc.)
+exposure.csv	      Stock–industry mapping and weights
+policy.csv	      Industry-level policy strength sequences
 
-🧩 Data Description
-详见 data_sample/README.md。
+For detailed schema, see data_sample/README.md.
 
-文件名	说明
-ohlcv.csv	股票每日行情数据（开盘价、收盘价等）
-exposure.csv	股票-行业映射及权重
-policy.csv	行业层面的政策强度序列
+## Methodology Overview
+**Stage 1 — Regression**
+Estimate industry returns’ sensitivity to policy exposure.
 
-🧠 Methodology Overview
-Regression Stage — 估计行业收益对政策暴露的敏感度
+**Stage 2 — Portfolio Construction**
+Build portfolios based on regression coefficients (β significance and sign).
 
-Portfolio Stage — 基于回归信号构建投资组合
+**Stage 3 — Reporting**
+Aggregate results and output summary tables for strategy comparison.
 
-Reporting Stage — 聚合结果、输出总表，用于策略比较
+## Future Work
+Integrate LLM-based embeddings for policy text features
 
-🧩 Future Work
-将 LLM 输出嵌入到政策文本特征中
+Introduce dynamic regression using rolling windows
 
-引入动态回归（rolling windows）
+Visualize industry-level factor loadings and portfolio performance
 
-可视化行业级因子载荷和组合表现
+## Contributors
+Xixi Miao, Hanzhi Xiao, Jiaxin Liu, Wenxuan Lyu, Zeyu Ma — Lead Developer
 
-👥 Contributors
-Name	Role	Contact
-xmiao073	Lead Developer	—
-ChatGPT (Assistant)	Project Advisor	—
-
-🏆 Designed for reproducibility, interpretability, and transparent benchmarking of LLM–policy interactions.
-
-### 🔘 One-click pipeline
-```bash
+## One-Click Pipeline (Optional)
+Run the entire workflow in one line:
 bash run_pipeline.sh
-# 动态示例
+# Example for dynamic mode:
 FREQ=dynamic DYN_WINDOWS="1 3 6 9 12 24 36" bash run_pipeline.sh

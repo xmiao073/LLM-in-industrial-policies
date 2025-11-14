@@ -8,21 +8,20 @@
 ## Project Structure
 
 LLM-in-industrial-policies/
-├── fincode/
-│ ├── regression_script.py # Policy impact regression analysis
-│ ├── portfolio_script.py # Portfolio construction based on regression results
-│ ├── portfolio_report.py # Aggregates portfolio results into summary tables
-│ └── ...
-├── data_sample/ # Minimal reproducible dataset
-│ ├── ohlcv.csv # Stock daily data (open, close, etc.)
-│ ├── exposure.csv # Stock-industry mapping and weights
-│ ├── policy.csv # Industry-level policy intensity sequence
-│ └── README.md
-├── config.py # Loads .env configuration
-├── .env # Default directories and global settings
-├── requirements.txt # Python dependencies
-└── README.md # Project overview and instructions
----
+- fincode/
+  - regression_script.py # Policy impact regression analysis
+  - portfolio_script.py # Portfolio construction based on regression resu
+  - portfolio_report.py # Aggregates portfolio results into summary tables
+  - ...
+- data_sample/ # Minimal reproducible dataset
+  - ohlcv.csv # Stock daily data (open, close, etc.)
+  - exposure.csv # Stock-industry mapping and weights
+  - policy.csv # Industry-level policy intensity sequence
+  - README.md
+- config.py # Loads .env configuration
+- .env # Default directories and global settings
+- requirements.txt # Python dependencies
+- README.md # Project overview and instructions
 
 ## Environment Setup
 
